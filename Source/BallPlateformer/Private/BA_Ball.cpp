@@ -68,9 +68,7 @@ void ABA_Ball::Move(const FInputActionValue& Value)
 
 void ABA_Ball::Jump(const FInputActionValue& Value)
 {
-	bool bIsPressed = Value.Get<bool>();
-	
-	if (bIsPressed && (bIsGrounded || JumpCount < MaxJumps))
+	if (bIsGrounded || JumpCount < MaxJumps)
 	{
 		BallMesh->AddImpulse(FVector(0.0f, 0.0f, JumpImpulse), NAME_None, true);
 		JumpCount++;
@@ -94,4 +92,6 @@ void ABA_Ball::CheckIfGrounded()
 
 	// Mettre à jour la variable
 	bIsGrounded = bHit;
+
+	if (bIsGrounded) JumpCount = 0;
 }

@@ -33,7 +33,7 @@ protected:
 
 	// Nombre de sauts
 	int JumpCount = 0;
-	int MaxJumps = 2;
+	int MaxJumps = 1;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
