@@ -3,6 +3,7 @@
 #include "BA_Ball.h"
 
 #include "BA_PlayerController.h"
+#include "BA_MoveingPlateform.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -45,6 +46,14 @@ void ABA_Ball::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	CheckIfGrounded();
+	
+	if (OnMovingPlatform)
+	{
+		FVector NewLocation = GetActorLocation() + PlatformVelocity * DeltaTime;
+
+		// Déplace la balle, en conservant la position en Z pour qu'elle reste sur la plateforme
+		SetActorLocation(FVector(NewLocation.X, NewLocation.Y, GetActorLocation().Z), true);
+	}
 }
 
 void ABA_Ball::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -68,7 +77,7 @@ void ABA_Ball::Move(const FInputActionValue& Value)
 
 void ABA_Ball::Jump(const FInputActionValue& Value)
 {
-	if (bIsGrounded || JumpCount < MaxJumps)
+	if (IsGrounded || JumpCount < MaxJumps)
 	{
 		BallMesh->AddImpulse(FVector(0.0f, 0.0f, JumpImpulse), NAME_None, true);
 		JumpCount++;
@@ -91,7 +100,23 @@ void ABA_Ball::CheckIfGrounded()
 	DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 2.0f);
 
 	// Mettre à jour la variable
-	bIsGrounded = bHit;
+	IsGrounded = bHit;
 
-	if (bIsGrounded) JumpCount = 0;
+	if (IsGrounded)
+	{
+		JumpCount = 0;
+
+		ABA_MoveingPlateform* Platform = Cast<ABA_MoveingPlateform>(Hit.GetActor());
+		if (Platform && Hit.Normal.Z > 0.7f) // Vérifie que la balle est sur le dessus
+		{
+			OnMovingPlatform = true;
+			PlatformVelocity = Platform->GetPlatformVelocity();
+		}
+	}
+	else
+	{
+		OnMovingPlatform = false;
+		PlatformVelocity = FVector::ZeroVector;
+	}
 }
+

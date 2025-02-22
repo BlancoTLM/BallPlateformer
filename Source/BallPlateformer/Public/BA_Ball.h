@@ -39,6 +39,10 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual void CheckIfGrounded();
 
+private:
+	FVector PlatformVelocity;
+	bool OnMovingPlatform = false;
+
 public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -58,5 +62,5 @@ public:
 	class UInputAction* JumpAction;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
-	bool bIsGrounded = false;
+	bool IsGrounded = false;
 };
