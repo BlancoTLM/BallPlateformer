@@ -6,27 +6,21 @@
 #include "BA_MoveingPlateform.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
 #include "GameFramework/Controller.h"
-#include "Camera/CameraComponent.h"
 
-// Sets default values
 ABA_Ball::ABA_Ball()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Création du composant de la sphère
 	BallMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BallMesh"));
 	RootComponent = BallMesh;
-
-	// Activer la physique
 	BallMesh->SetSimulatePhysics(true);
 	BallMesh->SetCollisionProfileName(TEXT("PhysicsActor"));
 	BallMesh->SetMassOverrideInKg(NAME_None, 10.0f); // Ajuster si nécessaire
 }
 
-// Called when the game starts or when spawned
 void ABA_Ball::BeginPlay()
 {
 	Super::BeginPlay();
@@ -51,8 +45,25 @@ void ABA_Ball::Tick(float DeltaTime)
 	{
 		FVector NewLocation = GetActorLocation() + PlatformVelocity * DeltaTime;
 
-		// Déplace la balle, en conservant la position en Z pour qu'elle reste sur la plateforme
 		SetActorLocation(FVector(NewLocation.X, NewLocation.Y, GetActorLocation().Z), true);
+	}
+
+	if (BallMesh)
+	{
+		float MaxSpeed = SpeedMax * SpeedMultiplier;
+		FVector Velocity = BallMesh->GetPhysicsLinearVelocity();
+
+		if (Velocity.Size() > MaxSpeed)
+		{
+			FVector ClampedVelocity = Velocity.GetClampedToMaxSize(MaxSpeed);
+			BallMesh->SetPhysicsLinearVelocity(ClampedVelocity);
+		}
+
+		if (BallMesh->IsSimulatingPhysics())
+		{
+			FVector GravityForce = GravityDirection * 980.0f * BallMesh->GetMass();
+			BallMesh->AddForce(GravityForce, NAME_None, true);
+		}
 	}
 }
 
@@ -65,13 +76,15 @@ void ABA_Ball::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	{
 		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABA_Ball::Move);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Started, this, &ABA_Ball::Jump);
+		EnhancedInput->BindAction(GravityAction, ETriggerEvent::Started, this, &ABA_Ball::ChangeGravity);
 	}
 }
 
 void ABA_Ball::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
-	FVector Force = FVector(MovementVector.X * MovementForce, MovementVector.Y * MovementForce, 0.0f);
+	FVector Force = FVector(MovementVector.X * MovementForce * SpeedMultiplier, MovementVector.Y * MovementForce * SpeedMultiplier, 0.0f);
+	FVector Velocity = BallMesh->GetPhysicsLinearVelocity();
 	BallMesh->AddForce(Force, NAME_None, false);
 }
 
@@ -87,19 +100,16 @@ void ABA_Ball::Jump(const FInputActionValue& Value)
 void ABA_Ball::CheckIfGrounded()
 {
 	FVector Start = GetActorLocation();
-	FVector End = Start - FVector(0.0f, 0.0f, 55.0f); // 55 = Rayon de la sphère + marge de sécurité
+	FVector End = Start - FVector(0.0f, 0.0f, 55.0f);
 
 	FHitResult Hit;
 	FCollisionQueryParams TraceParams;
-	TraceParams.AddIgnoredActor(this); // Ne pas se détecter soi-même
+	TraceParams.AddIgnoredActor(this);
 
-	// Lancer le RayTrace
 	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams);
 
-	// Debug : Dessiner le rayon dans l’éditeur
 	DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 2.0f);
 
-	// Mettre à jour la variable
 	IsGrounded = bHit;
 
 	if (IsGrounded)
@@ -107,7 +117,7 @@ void ABA_Ball::CheckIfGrounded()
 		JumpCount = 0;
 
 		ABA_MoveingPlateform* Platform = Cast<ABA_MoveingPlateform>(Hit.GetActor());
-		if (Platform && Hit.Normal.Z > 0.7f) // Vérifie que la balle est sur le dessus
+		if (Platform && Hit.Normal.Z > 0.7f)
 		{
 			OnMovingPlatform = true;
 			PlatformVelocity = Platform->GetPlatformVelocity();
@@ -120,3 +130,19 @@ void ABA_Ball::CheckIfGrounded()
 	}
 }
 
+void ABA_Ball::SetSpeedMultiplier(float Multiplier)
+{
+	SpeedMultiplier = Multiplier;
+}
+
+void ABA_Ball::SetGravityDirection(FVector NewGravity)
+{
+	GravityDirection = NewGravity.GetSafeNormal();
+}
+
+void ABA_Ball::ChangeGravity(const FInputActionValue& Value)
+{
+	GravityIsNormal = !GravityIsNormal;
+	FVector NewGravity = FVector(0.0f, 0.0f, GravityIsNormal * SpeedMultiplier);
+	SetGravityDirection(NewGravity);
+}

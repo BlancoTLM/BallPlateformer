@@ -4,10 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
 #include "BA_Ball.generated.h"
-
 
 UCLASS()
 class BALLPLATEFORMER_API ABA_Ball : public APawn
@@ -15,23 +14,16 @@ class BALLPLATEFORMER_API ABA_Ball : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
 	ABA_Ball();
 
 protected:
-	// Composant de la sphère
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
-	class UStaticMeshComponent* BallMesh;
 
-	// Force appliquée pour le mouvement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float MovementForce = 100000.0f;
 
-	// Force appliquée pour le saut
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float JumpImpulse = 500000.0f;
 
-	// Nombre de sauts
 	int JumpCount = 0;
 	int MaxJumps = 1;
 
@@ -39,28 +31,39 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual void CheckIfGrounded();
 
+public:
+	void SetSpeedMultiplier(float Multiplier);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	float SpeedMax = 300.0f;
+	
 private:
-	FVector PlatformVelocity;
+	float SpeedMultiplier = 1.0f;
 	bool OnMovingPlatform = false;
+	bool GravityIsNormal = true;
+	FVector PlatformVelocity;
+	FVector GravityDirection = FVector(0.0f, 0.0f, -1.0f);
 
 public:
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	class UStaticMeshComponent* BallMesh;
 
-	// Fonctions de mouvement
-	void Move(const FInputActionValue& Value);
-	void Jump(const FInputActionValue& Value);
-
-	// Mapping Context pour Enhanced Input
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	class UInputMappingContext* InputMapping;
 
-	// Actions pour le déplacement et le saut
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	class UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, Category = "Settings")
 	class UInputAction* JumpAction;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, Category = "Settings")
+	class UInputAction* GravityAction;
+
 	bool IsGrounded = false;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void Move(const FInputActionValue& Value);
+	void Jump(const FInputActionValue& Value);
+	void SetGravityDirection(FVector NewGravity);
+	void ChangeGravity(const FInputActionValue& Value);
 };
