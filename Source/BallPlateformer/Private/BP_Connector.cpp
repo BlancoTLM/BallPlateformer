@@ -9,18 +9,6 @@ ABP_Connector::ABP_Connector()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void ABP_Connector::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	for (ABP_Beam* Beam : ConnectedBeams)
-	{
-		FVector Direction = MeshComponent->GetComponentLocation() - Beam->MeshComponent->GetComponentLocation();
-		
-		Beam->MeshComponent->AddForce(Direction * AppliedForce, NAME_None, true);
-	}
-}
-
 void ABP_Connector::BeginPlay()
 {
 	Super::BeginPlay();
@@ -34,4 +22,34 @@ void ABP_Connector::BeginPlay()
 
 	MeshComponent->SetSimulatePhysics(false);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+
+	for (ABP_Beam* Beam : ConnectedBeams)
+	{
+		Beam->Connectors.Add(this);
+	}
+}
+
+void ABP_Connector::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	FVector Position = FVector(0, 0, 0);
+	for (ABP_Beam* Beam : ConnectedBeams)
+	{
+		if (Beam)
+		{
+			FVector Direction = MeshComponent->GetComponentLocation() - Beam->MeshComponent->GetComponentLocation();
+		
+			Beam->MeshComponent->AddForce(Direction * AppliedForce, NAME_None, true);
+
+			Position += Beam->MeshComponent->GetComponentLocation();
+		}
+	}
+
+	Position /= ConnectedBeams.Num();
+
+	FVector Pos = GetActorLocation();
+	Pos.Z = Position.Z;
+
+	SetActorLocation(Pos);
 }

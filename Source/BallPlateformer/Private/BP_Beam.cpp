@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BP_Beam.h"
+#include "BP_Connector.h"
 
 // Sets default values
 ABP_Beam::ABP_Beam()
@@ -22,4 +23,23 @@ void ABP_Beam::BeginPlay()
 
 	MeshComponent->SetSimulatePhysics(true);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::QueryAndPhysics);
+	MeshComponent->BodyInstance.bLockYRotation = true;
+	MeshComponent->BodyInstance.bLockZRotation = true;
+}
+
+void ABP_Beam::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	for (ABP_Connector* Connector : Connectors)
+	{
+		FVector Direction = Connector->MeshComponent->GetComponentLocation() - MeshComponent->GetComponentLocation();
+
+		if (Direction.X > 0)
+		{
+		}
+		else
+		{
+		}
+	}
 }
