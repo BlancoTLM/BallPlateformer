@@ -22,34 +22,36 @@ void ABP_Connector::BeginPlay()
 
 	MeshComponent->SetSimulatePhysics(false);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
-
-	for (ABP_Beam* Beam : ConnectedBeams)
-	{
-		Beam->Connectors.Add(this);
-	}
 }
 
 void ABP_Connector::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (IsAnchored) return;
+	
 	FVector Position = FVector(0, 0, 0);
 	for (ABP_Beam* Beam : ConnectedBeams)
 	{
 		if (Beam)
 		{
-			FVector Direction = MeshComponent->GetComponentLocation() - Beam->MeshComponent->GetComponentLocation();
-		
-			Beam->MeshComponent->AddForce(Direction * AppliedForce, NAME_None, true);
-
-			Position += Beam->MeshComponent->GetComponentLocation();
+			Position += Beam->GetCornerPosition(this);
 		}
 	}
 
 	Position /= ConnectedBeams.Num();
 
-	FVector Pos = GetActorLocation();
-	Pos.Z = Position.Z;
+	SetActorLocation(Position);
+}
 
-	SetActorLocation(Pos);
+FVector ABP_Connector::GetForce(FVector Position)
+{
+	FVector Direction = MeshComponent->GetComponentLocation() - Position;
+	
+	float Distance = Direction.Size();
+	Direction.Normalize();
+	float StretchFactor = Distance - MinDistance;
+	StretchFactor = FMath::Clamp(StretchFactor, -Stiffness, Stiffness);
+	
+	return AppliedForce * StretchFactor * Direction;
 }
