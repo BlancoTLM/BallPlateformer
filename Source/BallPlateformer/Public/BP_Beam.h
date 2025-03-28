@@ -43,6 +43,7 @@ public:
 private:
 	UMaterialInstanceDynamic* DynamicMaterial;
 	float Timer;
+	void ConnectConnectors();
 	
 public:	
 	ABP_Beam();
@@ -50,5 +51,4 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginPlay() override;
 	FVector GetCornerPosition(const ABP_Connector* Connector);
-	void ConnectConnectors();
 };

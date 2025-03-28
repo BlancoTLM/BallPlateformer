@@ -31,6 +31,8 @@ public:
 	int BeamAmount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	float ConnectorsDistanceFromCenter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float AppliedForce;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float MinDistance;
@@ -38,6 +40,10 @@ public:
 	float Stiffness;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	float MaxStress;
+
+private :
+	TArray<ABP_Connector*> ConnectorsArray;
+	TArray<ABP_Beam*> BeamsArray;
 
 public:
 	UFUNCTION(CallInEditor, BlueprintCallable, category = "Settings")
