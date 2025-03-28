@@ -74,7 +74,7 @@ void ABP_Beam::Tick(float DeltaTime)
 		DynamicMaterial->SetScalarParameterValue(FName("LerpValue"), ZeroToOne);
 	}
 
-	if (ZeroToOne == 1)
+	if (ZeroToOne >= 1)
 	{
 		Timer += DeltaTime;
 		if (Timer < 1) return;
